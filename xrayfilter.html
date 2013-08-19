@@ -328,7 +328,7 @@
 		<div class="pushed" id="ygrid" onclick="swap(this)"><input type="button"></input> Display grid</div>
 		<div class="pushed" id="yauto" onclick="swap(this)"><input type="button"></input> Automatic limits</div>
 		<input type="text" id="ymn" size="6" disabled="1" onchange="go(this)"></input>
-				to <input type="text" id="ymx" size="6" disabled="1" onchange="go(this)"></input> keV 
+				to <input type="text" id="ymx" size="6" disabled="1" onchange="go(this)"></input> 
 	</div></div>
 	<div id="ldrawer" class="drawer" style="display:none"><div>
 		<b style="font-size:15px">Paste here previously saved plot info</b><br/>
@@ -750,7 +750,7 @@
 		for(i=0;i<yt.length;i+=1) {
 			tlength=TickLength;
 			for(j=1;j<10;j+=1)	{ // sublog ticks
-				yy = y1+ly*(log10(j)+yt[i]-yt1);
+				yy = y2-ly*(log10(j)+yt[i]-yt1);
 				if(yy>y1 && yy<y2) {
 					ay1.svgLine(x1+tlength,yy,x1,yy,"black",TickWidth);
 					ay2.svgLine(x2-tlength,yy,x2,yy,"black",TickWidth);
