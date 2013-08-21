@@ -383,7 +383,7 @@
 <td>
 	<div style="position:relative; padding:10px; z-index:0;">
 		<svg id="linestyle" style="float:left" width="30px" height="1px"></svg>
-		<textarea id="box" rows="6" cols="70" style="line-height:1.1; font-Size:12px; resize:none">10um Al + 1mil Be
+		<textarea id="box" rows="2" cols="70" onkeyup="limitLines(this,event)" style="line-height:1.1; font-Size:12px; resize:none">10um Al + 1mil Be
 0.2cm Be ; 20um SiO2 (4.2 g/cc)</textarea>
 	</div>
 	<div style="position:relative; float:left;">
@@ -447,7 +447,27 @@
 
 	go(null);
 	
-	// Starts the thing
+	// Display the line styles next to the text area
+	function plotStyles() {
+		var b = document.getElementById("box");
+		var ncurves = b.value.split(/\r|\n/).length;
+		var lh=b.style.lineHeight;
+		var fs=b.style.fontSize.replace("px","");
+		while (sty.hasChildNodes()) { sty.removeChild(sty.lastChild); }
+		lh=Math.round(lh*parseInt(fs));
+		sty.setAttribute("height", lh*ncurves);
+		sty.setAttribute("width" , LegendLength+5);
+		for(i=0;i<ncurves;i=i+1) {
+			color[i] = CCODEtoRGB(ccode[i]);
+			dash[i] = DashStyles(CurveDash[i],CurveWidth[i]);
+			sty.svgLine(0,lh*(i+0.6),LegendLength,lh*(i+0.6),color[i],CurveWidth[i],dash[i]).id = "linestyle"+i;
+			rect = sty.svgRect(0,lh*i,LegendLength,lh,"rgba(1,1,1,0)","none",0);
+			rect.onclick = (function(k){ return function(){editLineStyle(k);}; }) (i);
+			rect.style.cursor="pointer";
+		}
+	}
+
+	// Setup the thing
 	function go(e) {
 		// Get plot parameters
 		var exmn=document.getElementById("xmn"),eymn=document.getElementById("ymn");
@@ -647,26 +667,11 @@
 		
 		plot();
 	}
-		
+	
 	// Plots the thing
 	function plot() {
 		var ncurves=text.length,lx,ly,rect,e,ee,xt1,xt2,xt,yt1,yt2,yt;
-
-		// display line styles next to the text area
-		var lh=document.getElementById("box").style.lineHeight;
-		var fs=document.getElementById("box").style.fontSize.replace("px","");
-		while (sty.hasChildNodes()) { sty.removeChild(sty.lastChild); }
-		lh=Math.round(lh*parseInt(fs));
-		sty.setAttribute("height", lh*6);
-		sty.setAttribute("width" , LegendLength+5);
-		for(i=0;i<6;i=i+1) {
-			color[i] = CCODEtoRGB(ccode[i]);
-			dash[i] = DashStyles(CurveDash[i],CurveWidth[i]);
-			sty.svgLine(0,lh*(i+0.6),LegendLength,lh*(i+0.6),color[i],CurveWidth[i],dash[i]).id = "linestyle"+i;
-			rect = sty.svgRect(0,lh*i,LegendLength,lh,"rgba(1,1,1,0)","none",0);
-			rect.onclick = (function(k){ return function(){editLineStyle(k);}; }) (i);
-			rect.style.cursor="pointer";
-		}
+		plotStyles();
 		
 		// Empty the graphic
 		while (im.hasChildNodes()) { im.removeChild(im.lastChild); }
@@ -1171,6 +1176,19 @@
 			case 4: return [4*u,u,u,u,u,u]; break;
 			default: return "none"; break;
 		}
+	}
+	
+	// Manage the input text area
+	function limitLines(e,evt) {
+		var t=e.value.split(/\r|\n/);
+		// prevent more lines than 6
+		if(t.length>6) {
+			t=t.slice(0,6);
+			e.value=t.join("\r");
+		}
+		//adjust the textarea size to the number of lines
+		e.rows=t.length;
+		plotStyles();
 	}
 	
 	// Remove one element
