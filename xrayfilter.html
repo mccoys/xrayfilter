@@ -313,7 +313,6 @@
 </head>
 
 <body>
-
 <table id="content"><tbody><tr>
 <td>
 	<div id="xdrawer" class="drawer" style="display:none"><div>
@@ -381,18 +380,17 @@
 	</div>
 </td>
 <td>
+	<div style="position:fixed;top:0;left:0">
+		<svg id="plot" style="width:100%;height:100%;position:fixed;top:0;left:0;bottom:0;right:0;" preserveAspectRatio="none" ></svg>
+	</div>
 	<div style="position:relative; padding:10px; z-index:0;">
 		<svg id="linestyle" style="float:left" width="30px" height="1px"></svg>
 		<textarea id="box" rows="2" cols="70" onkeyup="limitLines(this,event)" style="line-height:1.1; font-Size:12px; resize:none">10um Al + 1mil Be
 0.2cm Be ; 20um SiO2 (4.2 g/cc)</textarea>
 	</div>
-	<div style="position:relative; float:left;">
-		<svg id="plot" width="640" height="480"></svg>
-	</div>
 	<div id="errors"></div>
 </td>
 </tr></tbody></table>
-
 <script language="javascript">
 <!--
 
@@ -405,14 +403,13 @@
 	var errs = document.getElementById("errors");
 	var im = document.getElementById("plot");
 	var sty = document.getElementById("linestyle");
-	im.addEventListener("mousemove", mouseMove, false);
-	im.addEventListener("mouseup", mouseUp, false);
 	var but = document.getElementById('bar').getElementsByTagName('input');
 	var dra = document.getElementsByClassName('drawer');
+	im.addEventListener("mousemove", mouseMove, false);
+	im.addEventListener("mouseup", mouseUp, false);
 	
 	// plot parameters
-	var w=im.getAttribute("width"), h=im.getAttribute("height");
-	var x1=0.1*w,x2=0.95*w,y1=0.05*h,y2=0.90*h; // box position
+	var x1=170, x2=700, y1=80, y2=400; // plot position
 	var TitleFontSize=22, TickFontSize=20, LegendFontSize=22;
 	var BoxWidth=2, TickWidth=2; GridWidth=1; LegendBoxWidth=2;
 	var TickLength=12, MinorTickLength=5; LegendLength=70;
@@ -447,26 +444,6 @@
 
 	go(null);
 	
-	// Display the line styles next to the text area
-	function plotStyles() {
-		var b = document.getElementById("box");
-		var ncurves = b.value.split(/\r|\n/).length;
-		var lh=b.style.lineHeight;
-		var fs=b.style.fontSize.replace("px","");
-		while (sty.hasChildNodes()) { sty.removeChild(sty.lastChild); }
-		lh=Math.round(lh*parseInt(fs));
-		sty.setAttribute("height", lh*ncurves);
-		sty.setAttribute("width" , LegendLength+5);
-		for(i=0;i<ncurves;i=i+1) {
-			color[i] = CCODEtoRGB(ccode[i]);
-			dash[i] = DashStyles(CurveDash[i],CurveWidth[i]);
-			sty.svgLine(0,lh*(i+0.6),LegendLength,lh*(i+0.6),color[i],CurveWidth[i],dash[i]).id = "linestyle"+i;
-			rect = sty.svgRect(0,lh*i,LegendLength,lh,"rgba(1,1,1,0)","none",0);
-			rect.onclick = (function(k){ return function(){editLineStyle(k);}; }) (i);
-			rect.style.cursor="pointer";
-		}
-	}
-
 	// Setup the thing
 	function go(e) {
 		// Get plot parameters
@@ -669,7 +646,8 @@
 	}
 	
 	// Plots the thing
-	function plot() {
+	function plot(attempt) {
+		if(attempt==undefined) {attempt=0;}
 		var ncurves=text.length,lx,ly,rect,e,ee,xt1,xt2,xt,yt1,yt2,yt;
 		plotStyles();
 		
@@ -788,7 +766,7 @@
 		// Axe titles
 		if (t1x==undefined) { // if titles not placed before, place it
 			t1x=(x2+x1)/2; t1y=y2+TickFontSize+5;
-			t2x=0; t2y=(y2+y1)/2;
+			t2x=x1-60; t2y=(y2+y1)/2;
 		}
 		var t1=im.svgText('X-ray energy (keV)',t1x,t1y,TitleFontSize,"black",'NC');
 		var t2=im.svgText('Transmission',t2x,t2y,TitleFontSize,"black",'NC','-90');
@@ -821,6 +799,44 @@
 		}
 		// Make legend movable
 		g.makeMovable(0,"move");
+		
+		// If plot overlaps with other stuff,
+		// then change the size and replot
+		if(attempt>3) { return; }
+		if(attempt>2) {
+			x1=170; x2=700; y1=80; y2=400; 
+			lx1 = undefined; t1x = undefined; plot(attempt+1); return;
+		}
+		var e=document.getElementById("box");
+		e=e.offsetTop+e.offsetHeight;
+		var b=im.getBBox(), r=false;
+		if(x2<x1+10) { r=x1; x1=x2; x2=r; r=true; }
+		if(y2<y1+10) { r=y1; y1=y2; y2=r; r=true; }
+		if(x2<=x1) { x1=(x1+x2)/2-5; x2=x1+10; r=true; }
+		if(y2<=y1) { y1=(y1+y2)/2-5; y2=y1+10; r=true; }
+		if(r) {	lx1 = undefined; t1x = undefined; plot(attempt+1); return; }
+		if(b.y<e+10) { y1 = e+25; r=true; }
+		if(r) {	lx1 = undefined; t1x = undefined; plot(attempt+1); return; }
+	}
+
+	// Display the line styles next to the text area
+	function plotStyles() {
+		var b = document.getElementById("box");
+		var ncurves = b.value.split(/\r|\n/).length;
+		var lh=b.style.lineHeight;
+		var fs=b.style.fontSize.replace("px","");
+		while (sty.hasChildNodes()) { sty.removeChild(sty.lastChild); }
+		lh=Math.round(lh*parseInt(fs));
+		sty.setAttribute("height", lh*ncurves);
+		sty.setAttribute("width" , LegendLength+5);
+		for(i=0;i<ncurves;i=i+1) {
+			color[i] = CCODEtoRGB(ccode[i]);
+			dash[i] = DashStyles(CurveDash[i],CurveWidth[i]);
+			sty.svgLine(0,lh*(i+0.6),LegendLength,lh*(i+0.6),color[i],CurveWidth[i],dash[i]).id = "linestyle"+i;
+			rect = sty.svgRect(0,lh*i,LegendLength,lh,"rgba(1,1,1,0)","none",0);
+			rect.onclick = (function(k){ return function(){editLineStyle(k);}; }) (i);
+			rect.style.cursor="pointer";
+		}
 	}
 
 	// Manages the push/pop red checkboxes
@@ -970,6 +986,8 @@
 		nw.document.write("<!DOCTYPE HTML><html><head><title>Printing</title></head><body></body></html>");
 		var cloned=im.cloneNode(true);
 		nw.document.getElementsByTagName('body')[0].appendChild(cloned);
+		var b=cloned.getBBox();
+		cloned.setAttribute('transform','translate(-100,-70)');
 		nw.document.close();
 		nw.print();
 	}
