@@ -76,6 +76,14 @@
 		e.setAttribute("style","fill:"+fill+"; stroke:"+stroke+"; stroke-width:"+thickness+";");
 		return e;
 	};
+	SVGElement.prototype.svgCircle = function(cx,cy,r,fill,stroke,thickness) {
+		var e=document.createElementNS(svgns,"circle");
+		this.appendChild(e);
+		e.setAttribute("cx",""+cx); e.setAttribute("cy",""+cy); e.setAttribute("r",""+r);
+		e.setAttribute("fill",""+fill);
+		e.setAttribute("style","stroke:"+stroke+"; stroke-width:"+thickness+";");
+		return e;
+	};
 	SVGElement.prototype.svgPolyline = function(points,stroke,thickness,dash) {
 		var e=document.createElementNS(svgns,"polyline");
 		this.appendChild(e);
@@ -680,14 +688,17 @@
 		for(i=0;i<ncurves;i=i+1){ curve(nrj,trans[i],Emin,Emax,Tmin,Tmax,i); }
 
 		// Manage display of xyBox
-		e=im.svgRect(x1,y1,x2-x1,y2-y1,"transparent","none",0);
-		e.style.cursor = "crosshair";
 		xyBox=document.createElementNS(svgns,"g");
+		xyBoxclicked = false;
 		xyBox.svgRect(0,0,63,30,"white","black",1);
 		xyBox.style.display="none";
 		ee=im.svgText("0",5,5 ,12,"black","NW"); xyBox.appendChild(ee);
 		ee=im.svgText("0",5,17,12,"black","NW"); xyBox.appendChild(ee);
-		e.onmousemove = function(evt){
+		xyLine=im.svgLine(x1,y1,x1,y2,"#ccc",1,"none"); xyLine.style.display="none";
+		xyDot =im.svgCircle(0,0,4,"black","none",0); xyDot.style.display ="none";
+		e=im.svgRect(x1,y1,x2-x1,y2-y1,"transparent","none",0);
+		e.style.cursor = "crosshair";
+		e.onmousemove1 = function(evt){
 			im.appendChild(xyBox); xyBox.style.display="block";
 			var x=evt.pageX-parseFloat(im.parentNode.offsetLeft);
 			var y=evt.pageY-parseFloat(im.parentNode.offsetTop );
@@ -704,7 +715,55 @@
 			xyBox.childNodes[1].textContent=e;
 			xyBox.childNodes[2].textContent=t+" %";
 		};
-		e.onmouseout = function(evt){ xyBox.style.display="none"; };
+		e.onmousemove = e.onmousemove1;
+		// Manage xyBox when clicked
+		e.onmousemove2 = function(evt){
+			im.appendChild(xyBox); xyBox.style.display="block";
+			var x=evt.pageX-parseFloat(im.parentNode.offsetLeft);
+			var y=evt.pageY-parseFloat(im.parentNode.offsetTop );
+			var e=(x-x1)/(x2-x1), k = Math.round(e*nrjs);
+			e = x_log?Emin*Math.pow(Emax/Emin,e):e*(Emax-Emin)+Emin; // Energy in eV
+			if (e>1e6) { e=(e*1e-6).toFixed(3)+" MeV"; }
+			else if (e>1e5) { e=(e*1e-3).toFixed(1)+" keV"; }
+			else if (e>2e3) { e=(e*1e-3).toFixed(2)+" keV"; }
+			else { e=e.toFixed(0)+" eV" }
+			var t=(y2-y)/(y2-y1), tt, tdiff = Infinity, tdiff1, i, ii=0;
+			t=(y_log?Tmin*Math.pow(Tmax/Tmin,t):t*(Tmax-Tmin)+Tmin); // transmission
+			for(i=0;i<ncurves;i=i+1){ // Find closest curve
+				tt = trans[i][k];
+				if(y_log) tt = log10(tt);
+				tdiff1 = Math.abs(tt-t);
+				if(tdiff1<tdiff) { tdiff=tdiff1; ii=i; }
+			}
+			t = trans[ii][k]; // closest transmission
+			y = y_log ? log10(t/Tmin)/log10(Tmax/Tmin) : (t-Tmin)/(Tmax-Tmin);
+			y = y*(y1-y2)+y2;
+			t = 100.*t; // in %
+			t = t<1. ? t.toExponential(1) : t.toFixed(1);
+			xyBox.setAttribute("transform","translate("+(x+5)+","+(y+5)+")");
+			xyBox.childNodes[1].textContent=e;
+			xyBox.childNodes[2].textContent=t+" %";
+			xyLine.setAttribute("x1",""+x); xyLine.setAttribute("x2",""+x);
+			xyDot.setAttribute("cx",""+x); xyDot.setAttribute("cy",""+y);
+			xyDot.setAttribute("fill",""+color[ii]);
+		};
+		e.onmousedown = function(evt){
+			evt.preventDefault();
+			xyBoxclicked = true;
+			this.onmousemove = this.onmousemove2;
+			xyLine.style.display="block";
+			xyDot.style.display="block";
+		};
+		e.onmouseup = function(evt){
+			if(!xyBoxclicked) return;
+			xyBoxclicked = false;
+			this.onmousemove = this.onmousemove1;
+			xyLine.style.display="none";
+			xyDot.style.display="none";
+		};
+		e.onmouseout = function(evt){
+			xyBox.style.display="none";
+		};
 
 		// X Axes and Ticks
 		var ax1 = document.createElementNS(svgns,"g"); im.appendChild(ax1); ax1.id="ax1";
