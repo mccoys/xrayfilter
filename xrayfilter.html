@@ -11,13 +11,18 @@
 	#bar { position:relative; float:left; width:115px; z-index:20;
 		border:0; height:100%;
 		background:transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGgAAAABCAYAAAAy5+szAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAFxJREFUGNOVjr0KgDAMhL+8/ysK1cG6dHVwSVyaEoMiPThyl39prRkdIoKZDT2Lr/mcN7NRdx1j1Hn+D7nPve/NtZhz/3ZLVR89Mz9FlFIUOIAKbMDSuQI7cAZeN/FlVj/BiieRAAAAAElFTkSuQmCC) repeat-y;}
-	#bar input { width:92px; padding:4px; cursor:pointer; 
+	.barnormal, .barhover, .barsmall { width:92px; padding:4px; cursor:pointer; 
 		padding-right:8px; text-align:right; }
 	.barnormal { background:transparent; border:1px solid transparent;
 		border-left:0; border-right:0;}
-	#bar input:hover, .barhover { background-color:#E9E0DB;
+	.barnormal:hover, .barhover { background-color:#E9E0DB;
 		border:1px solid #C9A798;  border-left:0; border-right:0;}
-	#bar *, .drawer, .drawer * {font-size: 12px; font-family:sans-serif;}
+	.barsmall { background:transparent; border:1px solid transparent;
+		width:25px; height:25px; margin:0 0 0 12px; float:left; padding:0;}
+	.barsmall > * { background:transparent; border:0; width:25px; height:25px; cursor:pointer}
+	.barsmall:hover { background-color:#E9E0DB; border:1px solid #C9A798; }
+
+	#bar > *, .drawer, .drawer * {font-size: 12px; font-family:sans-serif;}
 	.drawer { position:absolute; top:0; left:90px; border:0; height:100%;
 		background:transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAiUAAAABCAYAAAABz97iAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAYpJREFUSMd9lclOBDEMRJ+/rP//zAVpxCIkQNzhwoHi0Em8xD0tjbonieMqlxf7er2J8ZgZAJIwDCHMDAkY3wgw2meYI53f843CAQkMvx/z7XiGYjPwSXKcGxQ7FzR3lO+r+LcLbFg5rgS//KOcsOF/UDx3r0wa/5P/jH/Fv7QINCel6D/xrw7WUivQHv4kX46/2wf8JSpp7R5/hfwj8L9Itpw/If7pOe3jvlB7n/vEz+wJsLQlLO9c5DqOd43lVigUXQoATfxSqjPX2wvwzJ9grUbMjd7Ov6G/kGwRaPjnPOyONfWJA076yvOPmH4F30X4Qi/LvaTNhRFjtQL3NpFZtL/UvOiU6k2Th/acvbSXd6je8aUWqvWrDMTrJ+wlnaq9tj7uV2rTeau/1EDvJDAlDbe8aDgn92pmWOlxoadYmRWrP6f56XNz5WyZr/U7rsW5IZVzzXfsvm1brj7n/BizxLfNCyjkstXYrCuthMcy/vB+eHz+Az6AT+ANeAJuwAvwDvyM3/dxHL//oAouCzgqwNoAAAAASUVORK5CYII=) repeat-y right;}
 	#xdrawer > div { margin:50px 35px auto 15px }
@@ -217,6 +222,9 @@
 			case "t2": t2x+=X; t2y+=Y; break;
 		}
 		currentMoving="";
+		var b=im.getBoundingClientRect();
+		dBG.style.width=""+Math.round(Math.max(610,b.right-100))+"px";
+		dBG.style.height=""+Math.round(Math.max(200,b.bottom+20))+"px";
 		plot();
 	}
 	
@@ -386,13 +394,17 @@
 		<input type="button" class="barnormal" id="help"  value=" Help "     onclick="drawer(this,'hdrawer')"></input><br/>
 		<input type="button" class="barnormal" id="compounds"  value=" Compounds "     onclick="drawer(this,'cdrawer')"></input><br/>
 		<br/>
+		<div class="barsmall"><input type="button" value="A" onclick="changeFontSize(event,-1);" style="font-size:10px;"></input></div>
+		<div class="barsmall"><input type="button" value="A" onclick="changeFontSize(event,+1);" style="font-size:14px;"></input></div>
+		<br/>
 	</div>
 </td>
 <td>
+	<div id="dummyBG" style="position:relative; width:610px; height:450px;"></divW>
 	<div style="position:fixed;top:0;left:0">
 		<svg id="plot" style="width:100%;height:100%;position:fixed;top:0;left:0;bottom:0;right:0;" preserveAspectRatio="none" ></svg>
 	</div>
-	<div style="position:relative; padding:10px; z-index:0;">
+	<div style="position:relative; padding:10px; z-index:0; width:610px;">
 		<svg id="linestyle" style="float:left" width="30px" height="1px"></svg>
 		<textarea id="box" rows="2" cols="70" onkeyup="limitLines(this,event)" style="line-height:1.1; font-Size:12px; resize:none">10um Al + 1mil Be
 0.2cm Be ; 20um SiO2 (4.2 g/cc)</textarea>
@@ -410,24 +422,28 @@
 
 	// HTML elements
 	var errs = document.getElementById("errors");
+	var dBG = document.getElementById("dummyBG");
 	var im = document.getElementById("plot");
 	var sty = document.getElementById("linestyle");
-	var but = document.getElementById('bar').getElementsByTagName('input');
+	var bar = document.getElementById('bar');
+	var but = bar.getElementsByClassName('barnormal');
 	var dra = document.getElementsByClassName('drawer');
 	im.addEventListener("mousemove", mouseMove, false);
 	im.addEventListener("mouseup", mouseUp, false);
+	document.onscroll = function() {
+		var b=bar.getBoundingClientRect();
+		im.setAttribute("transform","translate("+(b.left)+","+(b.top)+")");
+	}
 	
 	// plot parameters
 	var x1=170, x2=700, y1=80, y2=400; // plot position
-	var TitleFontSize=22, TickFontSize=20, LegendFontSize=22;
+	var TitleFontSize, TickFontSize, LegendFontSize,SupFontSize,SupShift;
 	var BoxWidth=2, TickWidth=2; GridWidth=1; LegendBoxWidth=2;
 	var TickLength=12, MinorTickLength=5; LegendLength=70;
 	var LegendMargin=5; LegendPadding=35;
 	var lx1, ly1, lx2, ly2; // Legend position
 	var t1x, t1y, t2x, t2y; // Titles positions
-	var SupFontSize=Math.round(TickFontSize*0.8);
-	var SupShift=Math.round(-TickFontSize*0.4);
-	var x_auto=true, y_auto=true, x_log=false, y_log=false, x_grid=true, y_grid=true;
+	var x_auto=true, y_auto=true, x_log=false, y_log=false, x_grid=true, y_grid=true, legend_auto=true;
 	
 	// Color for curves
 	var ccode=new Array(6), nc1=7, nc2=7, nc3=7;
@@ -440,7 +456,7 @@
 	CurveDash = [0,0,0,0,0,0];
 	// Names
 	CurveName = new Array(6);
-	for (i=0;i<6;i+=1) { CurveName[i] = "Stack "+(i+1); }
+	for (i=0;i<6;i+=1) { CurveName[i] = "Auto"; }
 	
 	// Load compounds
 	var out='';
@@ -451,7 +467,8 @@
 	}
 	document.getElementById("compt").innerHTML='<tbody>'+out+'</tbody>';
 
-	go(null);
+	// First initialization and go
+	changeFontSize();
 	
 	// Setup the thing
 	function go(e) {
@@ -489,7 +506,7 @@
 	// Calculates the thing
 	function calculate() {
 		errs.innerHTML='';
-		var transmin=1.,transmax=0., par, qua, quatot, mat, coeff;
+		var transmin=1.,transmax=0., par, qua, quatot, mat, coeff, cname;
 		
 		// Parse filter stack info
 		text = document.getElementById("box").value;
@@ -517,7 +534,7 @@
 				if(line.replace(/\s/g,"")==="") { text.splice(i,1); i=i-1; continue; } // remove if empty
 				line= line.split(';');
 				
-				error = '';
+				error = ''; cname='';
 				for(j=0;j<line.length;j=j+1) { // For each filter
 					par = /\([^)]+\)/.exec(line[j]); // find stuff in parenthesis
 					if (par!=null) { // if something in parenthesis, it is density
@@ -558,6 +575,8 @@
 						error='line '+(i+1)+': cannot understand "'+foil+'".';
 						break;
 					}
+					if(j>0) cname+=' / ';
+					cname+=cm2whatever(thk)+' '+el; // 'name' of this filter
 					
 					// Use entered density or default density
 					if (par!=null) { // density has been defined in parentheses.
@@ -601,6 +620,9 @@
 				} // for each filter
 				
 				if(error.length>0) {break;}
+				
+				// Automated legends
+				if(legend_auto) { CurveName[i]=cname; }
 				
 				// Calculate total transmission
 				for(k=0;k<nrjs;k=k+1) {
@@ -1034,6 +1056,18 @@
 	// number of decimal places
 	function ndec(num) {return Math.pow(10.,Math.floor(log10(num))); }
 	
+	// nicer display of a cm length
+	function cm2whatever(n) {
+		if(n<1e-8) { return (n*1e7).toExponential(1)+'nm'; }
+		else if(n<1e-6) { return (n*1e7).toFixed(1)+'nm'; }
+		else if(n<1e-4) { return (n*1e7).toFixed(0)+'nm'; }
+		else if(n<1e-3) { return (n*1e4).toFixed(1)+'um'; }
+		else if(n<1e-1) { return (n*1e4).toFixed(0)+'um'; }
+		else if(n<1e0 ) { return (n*1e1).toFixed(1)+'mm'; }
+		else if(n<1e2 ) { return (n*1e1).toFixed(0)+'mm'; }
+		else { return (n*1e1).toExponential(1)+'mm'; }
+	}
+	
 	// functions for generating spaced-values arrays
 	function linspace(u1,u2,n) {
 		var a=new Array(n);
@@ -1086,6 +1120,8 @@
 		out += "x_auto="+x_auto+"; y_auto="+y_auto+";<br/>";
 		out += "x_log=" +x_log +"; y_log="+y_log+"<br/>";
 		out += "x_grid="+x_grid+"; y_grid="+y_grid+";<br/>";
+		out += "legend_auto="+legend_auto+";<br/>";
+		out += "TitleFontSize="+TitleFontSize+"; TickFontSize="+TickFontSize+"; LegendFontSize="+LegendFontSize+";<br/>";
 		out += "Emin="+Emin+"; Emax="+Emax+"; Tmin="+Tmin+"; Tmax="+Tmax+";<br/>";
 		out += "x1="+x1+"; x2="+x2+"; y1="+y1+"; y2="+y2+";<br/>";
 		out += "lx1="+lx1+"; lx2="+lx2+"; ly1="+ly1+"; ly2="+ly2+";<br/>";
@@ -1135,6 +1171,17 @@
 		};		
 	}
 	
+	// Manage the font size changing
+	function changeFontSize(e,n) {
+		if(e) { console.log(e.type); e.preventDefault(); }
+		if(n==undefined) { TitleFontSize=22; TickFontSize=20; LegendFontSize=20; }
+		else if(TitleFontSize+n<15 || TitleFontSize+n>25) { return; }
+		else { TitleFontSize+=n; TickFontSize+=n; LegendFontSize+=n; }
+		SupFontSize=Math.round(TickFontSize*0.8);
+		SupShift=Math.round(-TickFontSize*0.4);
+		go(null);
+	}
+		
 	// Opens menu to change line style
 	function editLineStyle(n) {
 		remove("menu"); remove("bg");
@@ -1144,7 +1191,12 @@
 		// When background clicked, save changes and come back to plot
 		bg.onmousedown = (function(i) {return function() {
 			var a = document.getElementById("changename");
-			if (a) { CurveName[i] = a.value; }
+			if (a) {
+				var v  = a.value.trim();
+				legend_auto=false;
+				if(v=='' || v=='Auto') legend_auto=true;
+				else CurveName[i] = v;
+			}
 			remove("menu"); remove("bg");
 			go(null);
 		}})(n);
@@ -1154,8 +1206,9 @@
 		// create change name text box
 		var changename=document.createElement("input");
 		menu.appendChild(changename); changename.type="text";
-		changename.value=CurveName[n]; changename.id="changename";
-		changename.size = "25";
+		changename.id="changename"; changename.size = "25";
+		changename.value=legend_auto?'Auto':CurveName[n];
+		changename.onblur = function(e) { if(e.target.value.trim()=='') e.target.value='Auto'; };
 		// create color table
 		var t=document.createElement("div");
 		menu.appendChild(t); t.id="colortable"; t.style.position="absolute";
