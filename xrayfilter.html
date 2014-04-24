@@ -89,6 +89,19 @@
 		e.setAttribute("style","stroke:"+stroke+"; stroke-width:"+thickness+";");
 		return e;
 	};
+	SVGElement.prototype.svgTriangle = function(cx,cy,r,orientation,fill,stroke,thickness) {
+		var e=document.createElementNS(svgns,"polygon");
+		this.appendChild(e);
+		var p = "",a;
+		for(var i=0;i<3;i+=1) {
+			a = Math.PI*(120.*i+orientation)/180.;
+			p += (cx+Math.cos(a)*r) + "," + (cy+Math.sin(a)*r) + " ";
+		}
+		e.setAttribute("points",p);
+		e.setAttribute("fill",""+fill);
+		e.setAttribute("style","stroke:"+stroke+"; stroke-width:"+thickness+";");
+		return e;
+	};
 	SVGElement.prototype.svgPolyline = function(points,stroke,thickness,dash) {
 		var e=document.createElementNS(svgns,"polyline");
 		this.appendChild(e);
@@ -760,7 +773,8 @@
 		ee=im.svgText("0",5,5 ,12,"black","NW"); xyBox.appendChild(ee);
 		ee=im.svgText("0",5,17,12,"black","NW"); xyBox.appendChild(ee);
 		xyLine=im.svgLine(x1,y1,x1,y2,"#ccc",1,"none"); xyLine.style.display="none";
-		xyDot =im.svgCircle(0,0,4,"black","none",0); xyDot.style.display ="none";
+		xyDot=document.createElementNS(svgns,"g"); xyDot.type = 0;
+		xyBox.appendChild(xyDot);
 		e=im.svgRect(x1,y1,x2-x1,y2-y1,"transparent","none",0);
 		e.style.cursor = "crosshair";
 		e.onmousemove1 = function(evt){
@@ -796,15 +810,17 @@
 			else if (e>2e3) { e=(e*1e-3).toFixed(2)+" keV"; }
 			else { e=e.toFixed(0)+" eV" }
 			var t=(y2-y)/(y2-y1), tt, tdiff = Infinity, tdiff1, i, ii=0;
-			t=(y_log?Tmin*Math.pow(Tmax/Tmin,t):t*(Tmax-Tmin)+Tmin); // transmission
 			for(i=0;i<ncurves;i=i+1){ // Find closest curve
 				tt = trans[i][k];
-				if(y_log) tt = log10(tt);
+				tt = y_log ? log10(tt/Tmin)/log10(Tmax/Tmin) : (tt-Tmin)/(Tmax-Tmin);
 				tdiff1 = Math.abs(tt-t);
 				if(tdiff1<tdiff) { tdiff=tdiff1; ii=i; }
 			}
 			t = trans[ii][k]; // closest transmission
 			y = y_log ? log10(t/Tmin)/log10(Tmax/Tmin) : (t-Tmin)/(Tmax-Tmin);
+			var desiredType = 1;
+			if(y<0) { desiredType = 2; y=0; }
+			if(y>1) { desiredType = 3; y=1; }
 			y = y*(y1-y2)+y2;
 			t = 100.*t; // in %
 			t = t<1. ? t.toExponential(1) : t.toFixed(1);
@@ -812,8 +828,16 @@
 			xyBox.childNodes[1].textContent=e;
 			xyBox.childNodes[2].textContent=t+" %";
 			xyLine.setAttribute("x1",""+x); xyLine.setAttribute("x2",""+x);
-			xyDot.setAttribute("cx",""+x); xyDot.setAttribute("cy",""+y);
-			xyDot.setAttribute("fill",""+color[ii]);
+			if(xyDot.type!=desiredType) {
+				if(xyDot.dot) xyDot.removeChild(xyDot.dot);
+				xyDot.type=desiredType;
+				switch(desiredType) {
+					case 1: xyDot.dot = xyDot.svgCircle  (-5,-5,4,"black","none",0); break;
+					case 2: xyDot.dot = xyDot.svgTriangle(-5,-5,6, 90,"black","none",0); break;
+					case 3: xyDot.dot = xyDot.svgTriangle(-5,-5,6,-90,"black","none",0); break;
+				}
+			}
+			xyDot.dot.setAttribute("fill",""+color[ii]);
 		};
 		e.onclick = function(evt){
 			evt.preventDefault();
@@ -895,16 +919,13 @@
 			x1=170; x2=700; y1=80; y2=400; 
 			lx1 = undefined; t1x = undefined; plot(attempt+1); return;
 		}
-		var e=document.getElementById("box");
-		e=e.offsetTop+e.offsetHeight;
 		var b=im.getBBox(), r=false;
+		y1 = Math.max(y1,25+document.getElementById("box").getBoundingClientRect().height);
 		if(x2<x1+10) { r=x1; x1=x2; x2=r; r=true; }
 		if(y2<y1+10) { r=y1; y1=y2; y2=r; r=true; }
 		if(x2<=x1) { x1=(x1+x2)/2-5; x2=x1+10; r=true; }
 		if(y2<=y1) { y1=(y1+y2)/2-5; y2=y1+10; r=true; }
-		if(r) {	lx1 = undefined; t1x = undefined; plot(attempt+1); return; }
-		if(b.y<e+10) { y1 = e+25; r=true; }
-		if(r) {	lx1 = undefined; t1x = undefined; plot(attempt+1); return; }
+		if(r) {	lx1 = undefined; t1x = undefined; plot(attempt+1); console.log(1); return; }
 	}
 
 	// Display the line styles next to the text area
