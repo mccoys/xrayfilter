@@ -439,8 +439,8 @@
 	var im = document.getElementById("plot");
 	var sty = document.getElementById("linestyle");
 	var bar = document.getElementById('bar');
-	var but = bar.getElementsByClassName('barnormal');
-	var dra = document.getElementsByClassName('drawer');
+	var but = collection2array(bar.getElementsByClassName('barnormal'));
+	var dra = collection2array(document.getElementsByClassName('drawer'));
 	im.addEventListener("mousemove", mouseMove, false);
 	im.addEventListener("mouseup", mouseUp, false);
 	document.onscroll = function() {
@@ -1353,6 +1353,13 @@
 	function remove(id) {
 		var e=document.getElementById(id);
 		if (e) { e.parentNode.removeChild(e); }
+	}
+	
+	// convert a HTML collection to an Array
+	function collection2array(coll) {
+		var a = new Array(coll.length);
+		for (var i=0;i<coll.length;i+=1) { a[i]=coll[i]; }
+		return a;
 	}
 -->
 </script>
