@@ -8,9 +8,8 @@
 	#content { position:absolute; top:0; bottom:0; border:0;
 		border-collapse:collapse; height:100%}
 	#content td { text-align:left; vertical-align:top; }
-	#bar { position:relative; float:left; width:115px; z-index:20;
-		border:0; height:100%;
-		background:transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGgAAAABCAYAAAAy5+szAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAFxJREFUGNOVjr0KgDAMhL+8/ysK1cG6dHVwSVyaEoMiPThyl39prRkdIoKZDT2Lr/mcN7NRdx1j1Hn+D7nPve/NtZhz/3ZLVR89Mz9FlFIUOIAKbMDSuQI7cAZeN/FlVj/BiieRAAAAAElFTkSuQmCC) repeat-y;}
+	#bar { position:relative; float:left; width:92px; z-index:20;
+		height:100%; background:#eee; border-right:1px solid #999; }
 	.barnormal, .barhover, .barsmall { width:92px; padding:4px; cursor:pointer; 
 		padding-right:8px; text-align:right; }
 	.barnormal { background:transparent; border:1px solid transparent;
@@ -23,14 +22,14 @@
 	.barsmall:hover { background-color:#E9E0DB; border:1px solid #C9A798; }
 
 	#bar > *, .drawer, .drawer * {font-size: 12px; font-family:sans-serif;}
-	.drawer { position:absolute; top:0; left:90px; border:0; height:100%;
-		background:transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAiUAAAABCAYAAAABz97iAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAYpJREFUSMd9lclOBDEMRJ+/rP//zAVpxCIkQNzhwoHi0Em8xD0tjbonieMqlxf7er2J8ZgZAJIwDCHMDAkY3wgw2meYI53f843CAQkMvx/z7XiGYjPwSXKcGxQ7FzR3lO+r+LcLbFg5rgS//KOcsOF/UDx3r0wa/5P/jH/Fv7QINCel6D/xrw7WUivQHv4kX46/2wf8JSpp7R5/hfwj8L9Itpw/If7pOe3jvlB7n/vEz+wJsLQlLO9c5DqOd43lVigUXQoATfxSqjPX2wvwzJ9grUbMjd7Ov6G/kGwRaPjnPOyONfWJA076yvOPmH4F30X4Qi/LvaTNhRFjtQL3NpFZtL/UvOiU6k2Th/acvbSXd6je8aUWqvWrDMTrJ+wlnaq9tj7uV2rTeau/1EDvJDAlDbe8aDgn92pmWOlxoadYmRWrP6f56XNz5WyZr/U7rsW5IZVzzXfsvm1brj7n/BizxLfNCyjkstXYrCuthMcy/vB+eHz+Az6AT+ANeAJuwAvwDvyM3/dxHL//oAouCzgqwNoAAAAASUVORK5CYII=) repeat-y right;}
-	#xdrawer > div { margin:50px 35px auto 15px }
-	#ydrawer > div { margin:80px 35px auto 15px }
-	#ldrawer > div { margin:80px 35px auto 15px; }
-	#sdrawer > div { margin:80px 35px auto 15px; width:380px }
-	#hdrawer > div { margin:20px 35px auto 20px; width:340px }
-	#cdrawer > div { margin:20px 35px auto 20px; width:300px }
+	.drawer { position:absolute; top:0; left:90px; }
+	.drawer > div { background:#E9E0DB; padding:15px; border:1px solid #C9A798;}
+	#xdrawer > div { margin-top:63px; }
+	#ydrawer > div { margin-top:88px; }
+	#ldrawer > div { margin-top:80px; }
+	#sdrawer > div { margin-top:80px; width:380px }
+	#hdrawer > div { width:340px }
+	#cdrawer > div { width:350px }
 	.drawer > div > div { padding:3px;}
 	.pushed, .poped, .pushed *, .poped * { cursor:pointer; }
 	.pushed input[type=button], .poped input[type=button]
