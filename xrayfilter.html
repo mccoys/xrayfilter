@@ -981,6 +981,10 @@
 		valCm=NaN;
 		units = units.toLowerCase();
 		switch(units) {
+		case 'angstrom':
+			valCm = 1e-8*val; break;
+		case 'nm': case 'nanometer': case 'nanometers':
+			valCm = 1e-7*val; break;
 		case 'um': case 'µm': case 'mu': case 'micron': case 'microns':
 			valCm = 1e-4*val; break;
 		case 'mm': case 'millimeter': case 'millimeters':
@@ -1202,7 +1206,7 @@
 		SupShift=Math.round(-TickFontSize*0.4);
 		go(null);
 	}
-		
+	
 	// Opens menu to change line style
 	function editLineStyle(n) {
 		remove("menu"); remove("bg");
