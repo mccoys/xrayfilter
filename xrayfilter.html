@@ -457,6 +457,7 @@
 	var lx1, ly1, lx2, ly2; // Legend position
 	var t1x, t1y, t2x, t2y; // Titles positions
 	var x_auto=true, y_auto=true, x_log=false, y_log=false, x_grid=true, y_grid=true, legend_auto=true;
+	var text = [];
 	
 	// Color for curves
 	var ccode=new Array(6), nc1=7, nc2=7, nc3=7;
@@ -480,6 +481,9 @@
 	}
 	document.getElementById("compt").innerHTML='<tbody>'+out+'</tbody>';
 
+	// Load cookie if exists
+	loadCookie();
+	
 	// First initialization and go
 	changeFontSize();
 	
@@ -537,6 +541,7 @@
 			else      { nrj=linspace(Emin,Emax,nrjs); }
 			if(p==0 && x_auto) {Emin = 1.e300; Emax = 0.;}
 
+			error = 'Nothing to display';
 			for(i=0;i<text.length;i=i+1) { // For each line
 				trans[i] = new Array(nrjs);
 				for(k=0;k<nrjs;k=k+1) {	trans[i][k]=0.; } // zeros array
@@ -925,7 +930,10 @@
 		if(y2<y1+10) { r=y1; y1=y2; y2=r; r=true; }
 		if(x2<=x1) { x1=(x1+x2)/2-5; x2=x1+10; r=true; }
 		if(y2<=y1) { y1=(y1+y2)/2-5; y2=y1+10; r=true; }
-		if(r) {	lx1 = undefined; t1x = undefined; plot(attempt+1); console.log(1); return; }
+		if(r) {	lx1 = undefined; t1x = undefined; plot(attempt+1); return; }
+		
+		// save plot to cookie for next time
+		storeCookie();
 	}
 
 	// Display the line styles next to the text area
@@ -1138,67 +1146,100 @@
 		nw.document.close();
 	}
 	
-	// Get the plot info and show it as text for the user to save it
+	// Show plot info as text for the user to save it
 	function store() {
 		var storediv=document.getElementById("sdrawer");
 		var out = "<div><b style=\"font-size:15px\">Copy/paste the following to a file of your choice</b><br/><br/><div class=\"store\">";
-		out += "x_auto="+x_auto+"; y_auto="+y_auto+";<br/>";
-		out += "x_log=" +x_log +"; y_log="+y_log+"<br/>";
-		out += "x_grid="+x_grid+"; y_grid="+y_grid+";<br/>";
-		out += "legend_auto="+legend_auto+";<br/>";
-		out += "TitleFontSize="+TitleFontSize+"; TickFontSize="+TickFontSize+"; LegendFontSize="+LegendFontSize+";<br/>";
-		out += "Emin="+Emin+"; Emax="+Emax+"; Tmin="+Tmin+"; Tmax="+Tmax+";<br/>";
-		out += "x1="+x1+"; x2="+x2+"; y1="+y1+"; y2="+y2+";<br/>";
-		out += "lx1="+lx1+"; lx2="+lx2+"; ly1="+ly1+"; ly2="+ly2+";<br/>";
-		out += "t1x="+t1x+"; t2x="+t2x+"; t1y="+t1y+"; t2y="+t2y+";<br/>";
-		var ncurves = text.length;
-		for(var i=0;i<ncurves;i+=1){
-			out += "#stack#"+(i+1)+"<br/>";
-			out += text[i]+"<br/>";
-			out += CurveName[i]+"<br/>";
-			out += CurveWidth[i]+" "+CurveDash[i];
-			for(var j=0;j<3;j+=1){ out += " "+ccode[i][j]; }
-			out += "<br/>";
-		}
+		out += storeText("<br/>")
 		storediv.innerHTML = out+ "</div><br/></div>";
 	}
 	
+	// Store current info to cookie
+	function storeCookie() {
+		var name = "info";
+		var value = storeText(";").replace(/=/g,"%").replace(/;/g,"$").replace(/\n/g,"");
+		
+		document.cookie = name+"="+value+"; path=/";
+	}
+
+	// Get the plot info as text
+	function storeText(delimiter) {
+		var out = "x_auto="+x_auto+";y_auto="+y_auto+";"+delimiter;
+		out += "x_log=" +x_log +"; y_log="+y_log+delimiter;
+		out += "x_grid="+x_grid+"; y_grid="+y_grid+";"+delimiter;
+		out += "legend_auto="+legend_auto+";"+delimiter;
+		out += "TitleFontSize="+TitleFontSize+"; TickFontSize="+TickFontSize+"; LegendFontSize="+LegendFontSize+";"+delimiter;
+		out += "Emin="+Emin+"; Emax="+Emax+"; Tmin="+Tmin+"; Tmax="+Tmax+";"+delimiter;
+		out += "x1="+x1+"; x2="+x2+"; y1="+y1+"; y2="+y2+";"+delimiter;
+		out += "lx1="+lx1+"; lx2="+lx2+"; ly1="+ly1+"; ly2="+ly2+";"+delimiter;
+		out += "t1x="+t1x+"; t2x="+t2x+"; t1y="+t1y+"; t2y="+t2y+";"+delimiter;
+		var ncurves = text.length;
+		for(var i=0;i<ncurves;i+=1){
+			out += "#stack#"+(i+1)+delimiter;
+			out += text[i]+delimiter;
+			out += CurveName[i]+delimiter;
+			out += CurveWidth[i]+" "+CurveDash[i];
+			for(var j=0;j<3;j+=1){ out += " "+ccode[i][j]; }
+			out += delimiter;
+		}
+		return out;
+	}
+
 	// Asks the user for previously saved plot info and load it
 	function load() {
 		// parse the info
-		document.getElementById("okb").onmousedown = function() {
-			var t=document.getElementById("loadarea").value.split("\n");
-			for(var i=0;i<t.length;i+=1){
-				l=t[i].replace(/\s+$/,'').replace(/^\s+/,''); // trim line
-				if(l.length==0) continue;
-				if(l.substring(0,1)=="#") {
-					j = parseInt(l.substring(1).split("#")[1])-1; // stack #
-					i+=1; l=t[i]; text[j]=l;
-					i+=1; l=t[i]; CurveName[j]=l;
-					i+=1; l=t[i].split(" ");
-					for(k=0;k<l.length;k+=1) l[k]=parseInt(l[k]);
-					CurveWidth[j]=l[0]; CurveDash[j]=l[1];
-					ccode[j][0]=l[2]; ccode[j][1]=l[3]; ccode[j][2]=l[4];
-				} else { eval(l); }
-			}
-			document.getElementById("xmn").value = ""+Emin/1000;
-			document.getElementById("xmx").value = ""+Emax/1000;
-			document.getElementById("ymn").value = ""+Tmin;
-			document.getElementById("ymx").value = ""+Tmax;
-			document.getElementById("box").value=text.join("\n");
-			x_auto=!x_auto; swap(document.getElementById("xauto"));
-			y_auto=!y_auto; swap(document.getElementById("yauto"));
-			x_grid=!x_grid; swap(document.getElementById("xgrid"));
-			y_grid=!y_grid; swap(document.getElementById("ygrid"));
-			x_log=!x_log; swap(document.getElementById("xlog"));
-			y_log=!y_log; swap(document.getElementById("ylog"));
+		document.getElementById("okb").onclick = function() {
+			var t=document.getElementById("loadarea").value.replace(/\n/g,";");
+			loadText(t);
 			go(null);
 		};		
 	}
 	
+	// Find a cookie if exists
+	function loadCookie() {
+		var name = "info";
+		var l=name.length, t=document.cookie;
+		var i=t.indexOf("info"), j=t.indexOf(";");
+		if(i<0) return; // return if no cookie
+		if(j<0) j=t.length-1;
+		t = t.substring(i+l+1,j); // get info string
+		t = t.replace(/%/g,"=").replace(/\$/g,";"); // recover the encoded "=" and ";" that are forbidden in cookies
+		loadText(t);
+		go(null);
+	}
+	
+	// loads the info previously stored in l"text"
+	function loadText(ltext) {
+		var t = ltext.split(";"), l, j;
+		for(var i=0;i<t.length;i+=1){
+			l=t[i].replace(/\s+$/,'').replace(/^\s+/,''); // trim line
+			if(l.length==0) continue;
+			if(l.substring(0,1)=="#") {
+				j = parseInt(l.substring(1).split("#")[1])-1; // stack #
+				i+=1; l=t[i]; text[j]=l;
+				i+=1; l=t[i]; CurveName[j]=l;
+				i+=1; l=t[i].split(" ");
+				for(k=0;k<l.length;k+=1) l[k]=parseInt(l[k]);
+				CurveWidth[j]=l[0]; CurveDash[j]=l[1];
+				ccode[j][0]=l[2]; ccode[j][1]=l[3]; ccode[j][2]=l[4];
+			} else { eval(l); }
+		}
+		document.getElementById("xmn").value = ""+Emin/1000;
+		document.getElementById("xmx").value = ""+Emax/1000;
+		document.getElementById("ymn").value = ""+Tmin;
+		document.getElementById("ymx").value = ""+Tmax;
+		document.getElementById("box").value=text.join("\n");
+		x_auto=!x_auto; swap(document.getElementById("xauto"));
+		y_auto=!y_auto; swap(document.getElementById("yauto"));
+		x_grid=!x_grid; swap(document.getElementById("xgrid"));
+		y_grid=!y_grid; swap(document.getElementById("ygrid"));
+		x_log=!x_log; swap(document.getElementById("xlog"));
+		y_log=!y_log; swap(document.getElementById("ylog"));
+	}
+	
 	// Manage the font size changing
 	function changeFontSize(e,n) {
-		if(e) { console.log(e.type); e.preventDefault(); }
+		if(e) { e.preventDefault(); }
 		if(n==undefined) { TitleFontSize=22; TickFontSize=20; LegendFontSize=20; }
 		else if(TitleFontSize+n<15 || TitleFontSize+n>25) { return; }
 		else { TitleFontSize+=n; TickFontSize+=n; LegendFontSize+=n; }
