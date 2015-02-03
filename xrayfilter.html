@@ -369,9 +369,9 @@
 		Data from both NIST and Henke tables, joined at 10 keV.<br/><br/>
 		<b>How to enter input</b><br/><br/>
 		Each line is a filter stack that can contain several filters, separated by either of the characters<br/>
-		<div class="code"> ; , / + </div>
+		<div class="code"> & , / + </div>
 		For example:<br/>
-		<div class="code">filter1 ; filter2 ; filter3</div>
+		<div class="code">filter1 + filter2 + filter3</div>
 		Each filter must be formatted in 3 parts:<br/>
 		<div class="code">thickness units material</div>
 		Optionally, density can be indicated in parentheses, with units:<br/>
@@ -409,6 +409,8 @@
 		<div class="barsmall"><input type="button" value="A" onclick="changeFontSize(event,-1);" style="font-size:10px;"></input></div>
 		<div class="barsmall"><input type="button" value="A" onclick="changeFontSize(event,+1);" style="font-size:14px;"></input></div>
 		<br/>
+		<input type="button" class="barnormal" id="reset"  value=" Reset "     onclick="makeCookie('',-1);reset()"></input><br/>
+		<br/>
 	</div>
 </td>
 <td>
@@ -419,7 +421,7 @@
 	<div style="position:relative; padding:10px; z-index:0; width:610px;">
 		<svg id="linestyle" style="float:left" width="30px" height="1px"></svg>
 		<textarea id="box" rows="2" cols="70" onkeyup="limitLines(this,event)" style="line-height:1.1; font-Size:12px; resize:none">10um Al + 1mil Be
-0.2cm Be ; 20um SiO2 (4.2 g/cc)</textarea>
+0.2cm Be / 20um SiO2 (4.2 g/cc)</textarea>
 	</div>
 	<div id="errors"></div>
 	</div>
@@ -449,28 +451,23 @@
 	}
 	
 	// plot parameters
-	var x1=170, x2=700, y1=80, y2=400; // plot position
+	var x1, x2, y1, y2; // plot position
 	var TitleFontSize, TickFontSize, LegendFontSize,SupFontSize,SupShift;
-	var BoxWidth=2, TickWidth=2; GridWidth=1; LegendBoxWidth=2;
-	var TickLength=12, MinorTickLength=5; LegendLength=70;
-	var LegendMargin=5; LegendPadding=35;
+	var BoxWidth, TickWidth, GridWidth, LegendBoxWidth;
+	var TickLength, MinorTickLength, LegendLength;
+	var LegendMargin, LegendPadding;
 	var lx1, ly1, lx2, ly2; // Legend position
 	var t1x, t1y, t2x, t2y; // Titles positions
-	var x_auto=true, y_auto=true, x_log=false, y_log=false, x_grid=true, y_grid=true, legend_auto=true;
+	var x_auto, y_auto, x_log, y_log, x_grid, y_grid, legend_auto;
 	var text = [];
 	
 	// Color for curves
-	var ccode=new Array(6), nc1=7, nc2=7, nc3=7;
-	ccode[0]=[6,5,6]; ccode[1]=[3,0,6]; ccode[2]=[1,4,6];
-	ccode[3]=[6,2,6]; ccode[4]=[1,0,6]; ccode[5]=[3,5,6];
+	var ccode=new Array(6), nc1, nc2, nc3;
 	var color=new Array(6), dash=new Array(6);
-	// Thicknesses
-	CurveWidth=[2,2,2,2,2,2];
-	// Line styles
-	CurveDash = [0,0,0,0,0,0];
-	// Names
-	CurveName = new Array(6);
-	for (i=0;i<6;i+=1) { CurveName[i] = "Auto"; }
+	var CurveWidth, CurveDash, CurveName=new Array(6);
+	
+	// Default parameters settings
+	reset();
 	
 	// Load compounds
 	var out='';
@@ -547,10 +544,10 @@
 				for(k=0;k<nrjs;k=k+1) {	trans[i][k]=0.; } // zeros array
 				
 				// Find delimiters and split
-				line = text[i].replace(/([^eE])[+\-]/g,'$1;').replace(/([A-Za-z][eE])[+\-]/g,'$1;'); // careful with - or + delimiters
-				line = line.replace(/[,&]/g,';'); // replace all delimiters by ';'
+				line = text[i].replace(/([^eE])[+]/g,'$1,').replace(/([A-Za-z][eE])[+]/g,'$1,'); // careful with "+" delimiter
+				line = line.replace(/[&]/g,',').replace(/([^g])\//g,'$1,'); // replace remaining delimiters by ','
 				if(line.replace(/\s/g,"")==="") { text.splice(i,1); i=i-1; continue; } // remove if empty
-				line= line.split(';');
+				line = line.split(',');
 				
 				error = ''; cname='';
 				for(j=0;j<line.length;j=j+1) { // For each filter
@@ -726,7 +723,8 @@
 		}
 		
 		// Plot curves
-		for(i=0;i<ncurves;i=i+1){ curve(nrj,trans[i],Emin,Emax,Tmin,Tmax,i); }
+		for(i=0;i<ncurves;i=i+1){
+			curve(nrj,trans[i],Emin,Emax,Tmin,Tmax,i); }
 
 		// X Axes and Ticks
 		var ax1 = document.createElementNS(svgns,"g"); im.appendChild(ax1); ax1.id="ax1";
@@ -1156,10 +1154,8 @@
 	
 	// Store current info to cookie
 	function storeCookie() {
-		var name = "info";
 		var value = storeText(";").replace(/=/g,"%").replace(/;/g,"$").replace(/\n/g,"");
-		
-		document.cookie = name+"="+value+"; path=/";
+		makeCookie(value);
 	}
 
 	// Get the plot info as text
@@ -1199,16 +1195,17 @@
 	function loadCookie() {
 		var name = "info";
 		var l=name.length, t=document.cookie;
-		var i=t.indexOf("info"), j=t.indexOf(";");
+		var i=t.indexOf(name), j=t.indexOf(";");
 		if(i<0) return; // return if no cookie
 		if(j<0) j=t.length-1;
 		t = t.substring(i+l+1,j); // get info string
 		t = t.replace(/%/g,"=").replace(/\$/g,";"); // recover the encoded "=" and ";" that are forbidden in cookies
+		console.log(t);
 		loadText(t);
 		go(null);
 	}
 	
-	// loads the info previously stored in l"text"
+	// loads the info previously stored in "ltext"
 	function loadText(ltext) {
 		var t = ltext.split(";"), l, j;
 		for(var i=0;i<t.length;i+=1){
@@ -1235,6 +1232,37 @@
 		y_grid=!y_grid; swap(document.getElementById("ygrid"));
 		x_log=!x_log; swap(document.getElementById("xlog"));
 		y_log=!y_log; swap(document.getElementById("ylog"));
+	}
+	
+	// Callback when the "reset" button is pressed
+	// Resets the plot parameters to default values
+	function reset() {
+		x1=170; x2=700; y1=80; y2=400; // plot position
+		BoxWidth=2; TickWidth=2; GridWidth=1; LegendBoxWidth=2;
+		TickLength=12; MinorTickLength=5; LegendLength=70;
+		LegendMargin=5; LegendPadding=35;
+		x_auto=true; y_auto=true; x_log=false; y_log=false; x_grid=true; y_grid=true; legend_auto=true;
+		
+		// Color for curves
+		nc1=7; nc2=7; nc3=7;
+		ccode[0]=[6,5,6]; ccode[1]=[3,0,6]; ccode[2]=[1,4,6];
+		ccode[3]=[6,2,6]; ccode[4]=[1,0,6]; ccode[5]=[3,5,6];
+		// Thicknesses
+		CurveWidth=[2,2,2,2,2,2];
+		// Line styles
+		CurveDash = [0,0,0,0,0,0];
+		// Names
+		for (i=0;i<6;i+=1) { CurveName[i] = "Auto"; }
+	}
+	
+	function makeCookie(value,days) {
+		if (days) {
+			var date = new Date();
+			date.setTime(date.getTime()+(days*24*60*60*1000));
+			var expires = "; expires="+date.toGMTString();
+		}
+		else var expires = "";
+		document.cookie = "info="+value+expires+"; path=/";
 	}
 	
 	// Manage the font size changing
