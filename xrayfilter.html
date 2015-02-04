@@ -781,7 +781,7 @@
 		e=im.svgRect(x1,y1,x2-x1,y2-y1,"transparent","none",0);
 		e.style.cursor = "crosshair";
 		e.onmousemove1 = function(evt){
-			im.appendChild(xyBox); xyBox.style.display="block";
+			im.insertBefore(xyBox, this); xyBox.style.display="block";
 			var x=evt.pageX-parseFloat(im.parentNode.offsetLeft);
 			var y=evt.pageY-parseFloat(im.parentNode.offsetTop );
 			var e=(x-x1)/(x2-x1);
@@ -800,7 +800,7 @@
 		e.onmousemove = e.onmousemove1;
 		// Manage xyBox when clicked
 		e.onmousemove2 = function(evt){
-			im.appendChild(xyBox);
+			im.insertBefore(xyBox, this);
 			xyBox.style.display="block";
 			xyLine.style.display="block";
 			xyDot.style.display="block";
@@ -842,6 +842,7 @@
 			}
 			xyDot.dot.setAttribute("fill",""+color[ii]);
 		};
+		e.onmousedown = function(evt){ evt.preventDefault(); };
 		e.onclick = function(evt){
 			evt.preventDefault();
 			if(!xyBoxclicked) {
@@ -1200,7 +1201,6 @@
 		if(j<0) j=t.length-1;
 		t = t.substring(i+l+1,j); // get info string
 		t = t.replace(/%/g,"=").replace(/\$/g,";"); // recover the encoded "=" and ";" that are forbidden in cookies
-		console.log(t);
 		loadText(t);
 		go(null);
 	}
@@ -1253,6 +1253,8 @@
 		CurveDash = [0,0,0,0,0,0];
 		// Names
 		for (i=0;i<6;i+=1) { CurveName[i] = "Auto"; }
+		//
+		changeFontSize();
 	}
 	
 	function makeCookie(value,days) {
