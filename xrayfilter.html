@@ -23,13 +23,15 @@
 	.barsmall:hover { background-color:#E9E0DB; border:1px solid #C9A798; }
 
 	#bar > *, .drawer, .drawer * {font-size: 12px; font-family:sans-serif;}
-	.drawer { position:absolute; top:0; left:90px; }
+	.drawer { display:none; position:absolute; top:0; left:90px; }
 	.drawer > div { background:#E9E0DB; padding:15px; border:1px solid #C9A798;}
 	#xdrawer > div { margin-top:63px; }
 	#ydrawer > div { margin-top:88px; }
 	#ldrawer > div { margin-top:80px; }
 	#sdrawer > div { margin-top:80px; width:380px }
 	#hdrawer > div { width:340px }
+	#cdrawer { overflow:auto; }
+	#cdrawer td[onclick] { cursor:pointer; }
 	#cdrawer > div { width:350px }
 	.drawer > div > div { padding:3px;}
 	.pushed, .poped, .pushed *, .poped * { cursor:pointer; }
@@ -344,28 +346,28 @@
 <body>
 <table id="content"><tbody><tr>
 <td>
-	<div id="xdrawer" class="drawer" style="display:none"><div>
+	<div id="xdrawer" class="drawer"><div>
 		<div class="poped" id="xlog" onclick="swap(this)"><input type="button" Value=""></input> Log scale</div>
 		<div class="pushed" id="xgrid" onclick="swap(this)"><input type="button"></input> Display grid</div>
 		<div class="pushed" id="xauto" onclick="swap(this)"><input type="button"></input> Automatic limits</div>
 		<input type="text" id="xmn" size="6" disabled="1" onchange="go(this)"></input>
 				to <input type="text" id="xmx" size="6" disabled="1" onchange="go(this)"></input> keV 
 	</div></div>
-	<div id="ydrawer" class="drawer" style="display:none"><div>
+	<div id="ydrawer" class="drawer"><div>
 		<div class="poped" id="ylog" onclick="swap(this)"><input type="button" Value=""></input> Log scale</div>
 		<div class="pushed" id="ygrid" onclick="swap(this)"><input type="button"></input> Display grid</div>
 		<div class="pushed" id="yauto" onclick="swap(this)"><input type="button"></input> Automatic limits</div>
 		<input type="text" id="ymn" size="6" disabled="1" onchange="go(this)"></input>
 				to <input type="text" id="ymx" size="6" disabled="1" onchange="go(this)"></input> 
 	</div></div>
-	<div id="ldrawer" class="drawer" style="display:none"><div>
+	<div id="ldrawer" class="drawer"><div>
 		<b style="font-size:15px">Paste here previously saved plot info</b><br/>
 		<textarea id="loadarea" cols="55" rows="18" style="resize:none"></textarea><br/>
 		<input id="okb" type="button" value="Ok" style="background-color:#E9E0DB;border:1px solid #C9A798"></input>
 	</div></div>
-	<div id="sdrawer" class="drawer" style="display:none"></div>
+	<div id="sdrawer" class="drawer"></div>
 	
-	<div id="hdrawer" class="drawer" style="display:none"><div>
+	<div id="hdrawer" class="drawer"><div>
 		<b style="font-size:15px">X-ray filter transmission - F. P&#233;rez</b><br/>
 		Data from both NIST and Henke tables, joined at 10 keV.<br/><br/>
 		<b>How to enter input</b><br/><br/>
@@ -388,7 +390,7 @@
 		Some plot elements are draggable.<br/><br/>
 		Click on the graph for a more precise cursor.<br/><br/>
 	</div></div>
-	<div id="cdrawer" class="drawer" style="display:none; overflow : auto;"><div>
+	<div id="cdrawer" class="drawer"><div>
 		<table id="compt"></table>
 	</div></div>
 	
@@ -417,11 +419,11 @@
 <td>
 	<div id="dummyBG" style="position:relative; width:610px; height:450px;">
  	<div style="position:fixed;top:0;left:0">
-		<svg id="plot" style="width:100%;height:100%;position:fixed;top:0;left:0;bottom:0;right:0;" preserveAspectRatio="none" ></svg>
+		<svg id="plot" style="width:100%;height:100%;position:fixed;top:0;left:0;bottom:0;right:0;" preserveAspectRatio="none" onclick="drawer()"></svg>
  	</div>
 	<div style="position:relative; padding:10px; z-index:0; width:610px;">
  		<svg id="linestyle" style="float:left" width="30px" height="1px"></svg>
-		<textarea id="box" rows="2" onkeyup="limitLines(this,event)" style="line-height:1.1; font-Size:12px; resize:none; width:510px;">10um Al + 1mil Be
+		<textarea id="box" rows="2" onkeyup="limitLines(this,event)" onkeydown="preventCR(this,event)" style="line-height:1.1; font-Size:12px; resize:none; width:510px;">10um Al + 1mil Be
 0.2cm Be / 20um SiO2 (4.2 g/cc)</textarea>
  	</div>
 	<div id="errors"></div>
@@ -471,11 +473,12 @@
 	reset();
 	
 	// Load compounds
-	var out='';
+	var out='', compound;
 	compounds=compounds.split('|');
 	for(var i=0;i<compounds.length;i+=1) {
 		m=compounds[i].split(';');
-		out+='<tr><td>'+m[0]+'</td><td>'+m[1]+' ('+m[2]+' g/cc)</td></tr>';
+		compound = m[1]+' ('+m[2]+' g/cc)';
+		out+='<tr><td>'+m[0]+'</td><td onclick="addCompound(\''+compound+'\')">'+compound+'</td></tr>';
 	}
 	document.getElementById("compt").innerHTML='<tbody>'+out+'</tbody>';
 
@@ -975,13 +978,17 @@
 	
 	// Manages the push/pop menu buttons
 	function drawer(e1,e2) {
-		e2 = document.getElementById(e2);
-		d = e2.style.display=="block";
+		if( e2 ) {
+			e2 = document.getElementById(e2);
+			d = e2.style.display=="block";
+		}
 		for(var i=0; i<dra.length; i+=1) {dra[i].style.display="none";}
 		for(var i=0; i<but.length; i+=1) {but[i].className="barnormal";}
-		e2.style.display = d?"none":"block";
-		e2.style.zIndex = 10;
-		e1.className = d?"barnormal":"barhover";
+		if( e2 ) {
+			e2.style.display = d?"none":"block";
+			e2.style.zIndex = 10;
+		}
+		if( e1 ) e1.className = d?"barnormal":"barhover";
 	}
 	
 	// Converts the value 'val' that has units 'units' to centimeters
@@ -1235,6 +1242,14 @@
 		y_log=!y_log; swap(document.getElementById("ylog"));
 	}
 	
+	function addCompound(compound) {
+		var text = document.getElementById("box").value;
+		if( text[text.length-1]!=" " ) text += " ";
+		text += compound;
+		document.getElementById("box").value = text;
+		drawer(document.getElementById("compounds"), 'cdrawer');
+	}
+	
 	// Callback when the "reset" button is pressed
 	// Resets the plot parameters to default values
 	function reset() {
@@ -1422,9 +1437,22 @@
 		}
 		//adjust the textarea size to the number of lines
 		e.rows=t.length;
-		plotStyles();
-	}
-	
+		// plot ?
+    	if (evt.which == 13 || evt.keyCode == 13) {
+    	    go();
+    		return false;
+    	} else {
+    		plotStyles();
+    	}
+    	return true;
+    }
+    
+    // Do not add line with shift+enter
+    function preventCR(e,evt) {
+    	if (evt.shiftKey && (evt.which == 13 || evt.keyCode == 13) ) evt.preventDefault();
+    	return false;
+    }
+    	
 	// Remove one element
 	function remove(id) {
 		var e=document.getElementById(id);
