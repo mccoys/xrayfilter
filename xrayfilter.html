@@ -31,8 +31,8 @@
 	#sdrawer > div { margin-top:80px; width:380px }
 	#hdrawer > div { width:340px }
 	#cdrawer { overflow:auto; }
-	#cdrawer td[onclick] { cursor:pointer; }
-	#cdrawer > div { width:350px }
+	#cdrawer a { cursor:pointer; padding-left:20px; color:#2244ee; }
+	#cdrawer > div { width:400px }
 	.drawer > div > div { padding:3px;}
 	.pushed, .poped, .pushed *, .poped * { cursor:pointer; }
 	.pushed input[type=button], .poped input[type=button]
@@ -45,7 +45,7 @@
 	.drawer input[type=text]:enabled  { background-color: #ddd; }
 	.drawer input[type=text]:disabled { background-color: transparent; }
 	#compt { border:0 }
-	#compt td { padding:2px 10px 2px 2px; }
+	#compt td { padding:2px; }
 	
 	#bg { position:fixed; width:100%; height:100%; top:0; left:0;
 		background-color:rgba(1,1,1,0.5); z-index:30;}
@@ -396,7 +396,7 @@
 	
 	<div id="bar">
 		<br/>
-		<input type="button" class="barnormal" id="go"    value=" Refresh "  onclick="go(this)"></input><br/>
+		<input type="button" class="barnormal" id="go"    value=" Replot&#13;&#10;&#x21E7;+&#8629;"  onclick="go(this)"></input><br/>
 		<br/>
 		<input type="button" class="barnormal" id="xaxis" value=" X axis "   onclick="drawer(this,'xdrawer')"></input><br/>
 		<input type="button" class="barnormal" id="yaxis" value=" Y axis "   onclick="drawer(this,'ydrawer')"></input><br/>
@@ -478,7 +478,7 @@
 	for(var i=0;i<compounds.length;i+=1) {
 		m=compounds[i].split(';');
 		compound = m[1]+' ('+m[2]+' g/cc)';
-		out+='<tr><td>'+m[0]+'</td><td onclick="addCompound(\''+compound+'\')">'+compound+'</td></tr>';
+		out+='<tr><td>'+m[0]+'</td><td>'+compound+'<a onclick="addCompound(\''+compound+'\')">&rArr;</a></td></tr>';
 	}
 	document.getElementById("compt").innerHTML='<tbody>'+out+'</tbody>';
 
@@ -1243,10 +1243,24 @@
 	}
 	
 	function addCompound(compound) {
-		var text = document.getElementById("box").value;
-		if( text[text.length-1]!=" " ) text += " ";
-		text += compound;
-		document.getElementById("box").value = text;
+		var textarea = document.getElementById("box");
+		var text = textarea.value;
+		//IE support
+		if (document.selection) {
+		    textarea.focus();
+		    sel = document.selection.createRange();
+		    sel.text = compound;
+		}
+		//MOZILLA and others
+		else if (textarea.selectionStart || textarea.selectionStart == '0') {
+			var startPos = textarea.selectionStart;
+			var endPos = textarea.selectionEnd;
+			textarea.value = text.substring(0, startPos) + compound + text.substring(endPos, text.length);
+			textarea.selectionStart = startPos + compound.length;
+			textarea.selectionEnd = startPos + compound.length;
+		} else {
+		    textarea.value += compound;
+		}
 		drawer(document.getElementById("compounds"), 'cdrawer');
 	}
 	
